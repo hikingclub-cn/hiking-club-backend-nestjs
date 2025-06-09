@@ -1,5 +1,4 @@
 -- Enable UUID generation (still needed for other tables that might use UUID for PKs)
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 --------------------------------------------------------------------------------
 -- Schema: hiking_user_schema
@@ -12,8 +11,8 @@ CREATE TYPE user_status_enum AS ENUM ('active', 'pending_verification', 'suspend
 
 CREATE TYPE notification_type_enum AS ENUM (
     'activity_invite',
-    'activity_报名成功', -- registration_success
-    'activity_开始提醒', -- start_reminder
+    'activity_registration_success', -- registration_success
+    'activity_start_reminder', -- start_reminder
     'activity_comment_reply',
     'activity_vote_ending_soon',
     'system_announcement',
@@ -108,7 +107,7 @@ COMMENT ON TABLE user_notification_preferences IS 'Manages user preferences for 
 
 -- Table: rewards (Badges/Achievements)
 CREATE TABLE IF NOT EXISTS rewards (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), -- This can remain UUID if not directly tied to user PK type
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- This can remain UUID if not directly tied to user PK type
     name VARCHAR(100) NOT NULL,
     description TEXT,
     icon_url TEXT,
@@ -119,7 +118,7 @@ COMMENT ON TABLE rewards IS 'Defines available rewards, badges, or achievements.
 
 -- Table: user_rewards (user_id FK type changed to INTEGER)
 CREATE TABLE IF NOT EXISTS user_rewards (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     reward_id UUID NOT NULL REFERENCES rewards(id) ON DELETE CASCADE, -- Assumes rewards.id is UUID
     achieved_at TIMESTAMPTZ DEFAULT NOW(),
@@ -129,7 +128,7 @@ COMMENT ON TABLE user_rewards IS 'Links users to the rewards they have earned.';
 
 -- Table: notifications (user_id FK types changed to INTEGER)
 CREATE TABLE IF NOT EXISTS notifications (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     recipient_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     sender_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
     type notification_type_enum NOT NULL,
@@ -143,7 +142,7 @@ COMMENT ON TABLE notifications IS 'Stores notifications for users.';
 
 -- Table: user_community_posts (user_id FK type changed to INTEGER)
 CREATE TABLE IF NOT EXISTS user_community_posts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     content_type community_post_content_type_enum NOT NULL,
     content_text TEXT,
@@ -178,7 +177,7 @@ CREATE TYPE activity_type_enum AS ENUM ('general', 'voting');
 
 -- Table: activity_categories
 CREATE TABLE IF NOT EXISTS activity_categories (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(100) UNIQUE NOT NULL,
     description TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
@@ -187,7 +186,7 @@ COMMENT ON TABLE activity_categories IS 'Stores different categories for activit
 
 -- Table: activities (organizer_id FK type changed to INTEGER)
 CREATE TABLE IF NOT EXISTS activities (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     type activity_type_enum NOT NULL DEFAULT 'general',
     title VARCHAR(255) NOT NULL,
     cover_image_url TEXT,
@@ -211,7 +210,7 @@ COMMENT ON TABLE activities IS 'Stores all activity details.';
 
 -- Table: activity_voting_options
 CREATE TABLE IF NOT EXISTS activity_voting_options (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     activity_id UUID NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     description TEXT,
@@ -240,7 +239,7 @@ COMMENT ON TABLE activity_category_map IS 'Links activities to their respective 
 
 -- Table: activity_participants (user_id FK type changed to INTEGER)
 CREATE TABLE IF NOT EXISTS activity_participants (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     activity_id UUID NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
     user_id INTEGER NOT NULL REFERENCES hiking_user_schema.users(id) ON DELETE CASCADE,
     join_time TIMESTAMPTZ DEFAULT NOW(),
@@ -252,7 +251,7 @@ COMMENT ON TABLE activity_participants IS 'Tracks users participating in activit
 
 -- Table: activity_route_points
 CREATE TABLE IF NOT EXISTS activity_route_points (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     activity_id UUID NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
     point_order INTEGER NOT NULL,
     latitude DECIMAL(9,6) NOT NULL,
@@ -266,7 +265,7 @@ COMMENT ON TABLE activity_route_points IS 'Stores ordered route points for "gene
 
 -- Table: points_of_interest
 CREATE TABLE IF NOT EXISTS points_of_interest (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     activity_id UUID NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     description TEXT,
@@ -280,7 +279,7 @@ COMMENT ON TABLE points_of_interest IS 'Stores points of interest along a route 
 
 -- Table: activity_photos (uploader_user_id FK type changed to INTEGER)
 CREATE TABLE IF NOT EXISTS activity_photos (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     activity_id UUID NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
     uploader_user_id INTEGER REFERENCES hiking_user_schema.users(id) ON DELETE SET NULL,
     image_url TEXT NOT NULL,
@@ -291,7 +290,7 @@ COMMENT ON TABLE activity_photos IS 'Stores photo album for an activity.';
 
 -- Table: activity_comments (user_id FK type changed to INTEGER)
 CREATE TABLE IF NOT EXISTS activity_comments (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     activity_id UUID NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
     user_id INTEGER NOT NULL REFERENCES hiking_user_schema.users(id) ON DELETE CASCADE,
     parent_comment_id UUID REFERENCES activity_comments(id) ON DELETE CASCADE,
@@ -312,7 +311,7 @@ COMMENT ON TABLE user_favorite_activities IS 'Stores activities favorited by use
 
 -- Table: user_trip_logs (user_id FK type changed to INTEGER)
 CREATE TABLE IF NOT EXISTS user_trip_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id INTEGER NOT NULL REFERENCES hiking_user_schema.users(id) ON DELETE CASCADE,
     activity_id UUID NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
     start_time TIMESTAMPTZ NOT NULL,
